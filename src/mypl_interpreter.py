@@ -9,19 +9,29 @@ class ReturnException(Exception):pass
 class Interpreter(ast.Visitor):
     """A MyPL interpret visitor implementation"""
     
-    def __init__(self):
+    def __init__(self, value_table, repl_heap):
         # initialize the symbol table (for ids -> values)
-        self.sym_table = sym_tbl.SymbolTable()
+        self.sym_table = value_table
+        '''
+        Temporary???
+        Add the initial scope in for the REPL to run in.
+        Might not be the best implementaion, but trying to get the base REPL working
+        '''
+        if(len(self.sym_table.scopes) == 0):
+            self.sym_table.push_environment()
         # holds the type of last expression type
         self.current_value = None
         # the heap {oid:struct_obj}
-        self.heap = {}
+        self.heap = repl_heap
+        self.print_called = False
     
     def __error(self, msg, the_token):
         raise error.MyPLError(msg, the_token.line, the_token.column)
     
     def __built_in_fun_helper(self, call_rvalue):
         fun_name = call_rvalue.fun.lexeme
+        if fun_name == 'print':
+            self.print_called=True
         arg_vals = []
         for arg in call_rvalue.args:
             arg.accept(self)
@@ -33,7 +43,7 @@ class Interpreter(ast.Visitor):
         #peform each function
         if fun_name == 'print':
             arg_vals[0] = arg_vals[0].replace(r'\n', '\n')
-            print(arg_vals[0], end='')
+            print(arg_vals[0])
         elif fun_name == 'length':
             self.current_value = len(arg_vals[0])
         elif fun_name == 'get':
@@ -72,20 +82,28 @@ class Interpreter(ast.Visitor):
         except ReturnException:
             pass
     
+    '''
+    Temporary???
+    Disabled new environments, only have the one
+    '''
     def visit_stmt_list(self, stmt_list):
-        self.sym_table.push_environment()
+        #self.sym_table.push_environment()
         for stmt in stmt_list.stmts:
             stmt.accept(self)
-        self.sym_table.pop_environment()
+        #self.sym_table.pop_environment()
 
     def visit_expr_stmt(self, expr_stmt):
         expr_stmt.expr.accept(self)
+        if(not self.print_called):
+            print(self.current_value)
     
     def visit_var_decl_stmt(self, var_decl):
         var_decl.var_expr.accept(self)
         exp_value = self.current_value
         self.sym_table.add_id(var_decl.var_id.lexeme)
         self.sym_table.set_info(var_decl.var_id.lexeme, exp_value)
+        if(not self.print_called):
+            print(self.current_value)
 
     def visit_assign_stmt(self, assign_stmt):
         assign_stmt.rhs.accept(self)

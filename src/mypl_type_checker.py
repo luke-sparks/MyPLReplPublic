@@ -9,39 +9,47 @@ class TypeChecker(ast.Visitor):
     take the form: type_id -> {v1:t1, ..., vn:tn} and function types
     take the form: fun_id -> [[t1, t2, ..., tn,], return_type]
     """
-    def __init__(self):
+    def __init__(self, type_table):
         # initialize the symbol table (for ids -> types)
-        self.sym_table = symbol_table.SymbolTable()
+        self.sym_table = type_table
         # current_type holds the type of the last expression type
         self.current_type = None
-        # global env (for return)
-        self.sym_table.push_environment()
-        # set global return type to int
-        self.sym_table.add_id('return')
-        self.sym_table.set_info('return', token.INTTYPE)
-        # load in built-in function types
-        self.sym_table.add_id('print')
-        self.sym_table.set_info('print', [[token.STRINGTYPE], token.NIL])
-        self.sym_table.add_id('length')
-        self.sym_table.set_info('length', [[token.STRINGTYPE], token.INTTYPE])
-        self.sym_table.add_id('get')
-        self.sym_table.set_info('get', [[token.INTTYPE, token.STRINGTYPE], token.STRINGTYPE])
-        self.sym_table.add_id('reads')
-        self.sym_table.set_info('reads', [[], token.STRINGTYPE])
-        self.sym_table.add_id('readi')
-        self.sym_table.set_info('readi', [[], token.INTTYPE])
-        self.sym_table.add_id('readf')
-        self.sym_table.set_info('readf', [[], token.FLOATTYPE])
-        self.sym_table.add_id('itos')
-        self.sym_table.set_info('itos', [[token.INTTYPE], token.STRINGTYPE])
-        self.sym_table.add_id('itof')
-        self.sym_table.set_info('itof', [[token.INTTYPE], token.FLOATTYPE])
-        self.sym_table.add_id('ftos')
-        self.sym_table.set_info('ftos', [[token.FLOATTYPE], token.STRINGTYPE])
-        self.sym_table.add_id('stoi')
-        self.sym_table.set_info('stoi', [[token.STRINGTYPE], token.INTTYPE])
-        self.sym_table.add_id('stof')
-        self.sym_table.set_info('stof', [[token.STRINGTYPE], token.FLOATTYPE])
+        #Make sure to only add the built in functions once
+        if(len(self.sym_table.scopes)==0):
+            # global env (for return)
+            self.sym_table.push_environment()
+            # set global return type to int
+            self.sym_table.add_id('return')
+            self.sym_table.set_info('return', token.INTTYPE)
+            # load in built-in function types
+            self.sym_table.add_id('print')
+            self.sym_table.set_info('print', [[token.STRINGTYPE], token.NIL])
+            self.sym_table.add_id('length')
+            self.sym_table.set_info('length', [[token.STRINGTYPE], token.INTTYPE])
+            self.sym_table.add_id('get')
+            self.sym_table.set_info('get', [[token.INTTYPE, token.STRINGTYPE], token.STRINGTYPE])
+            self.sym_table.add_id('reads')
+            self.sym_table.set_info('reads', [[], token.STRINGTYPE])
+            self.sym_table.add_id('readi')
+            self.sym_table.set_info('readi', [[], token.INTTYPE])
+            self.sym_table.add_id('readf')
+            self.sym_table.set_info('readf', [[], token.FLOATTYPE])
+            self.sym_table.add_id('itos')
+            self.sym_table.set_info('itos', [[token.INTTYPE], token.STRINGTYPE])
+            self.sym_table.add_id('itof')
+            self.sym_table.set_info('itof', [[token.INTTYPE], token.FLOATTYPE])
+            self.sym_table.add_id('ftos')
+            self.sym_table.set_info('ftos', [[token.FLOATTYPE], token.STRINGTYPE])
+            self.sym_table.add_id('stoi')
+            self.sym_table.set_info('stoi', [[token.STRINGTYPE], token.INTTYPE])
+            self.sym_table.add_id('stof')
+            self.sym_table.set_info('stof', [[token.STRINGTYPE], token.FLOATTYPE])
+            '''
+            Temporary???
+            Need to add an environment for the repl to run in
+            Might not be the best implementaion, but trying to get the base REPL working
+            '''
+            self.sym_table.push_environment()
 
     def __error(self, error_msg, error_token):
         s = error_msg
@@ -60,13 +68,16 @@ class TypeChecker(ast.Visitor):
             return token.STRINGTYPE
         return val_token
   
+    '''
+    Disabled new environments, only have the one
+    '''
     def visit_stmt_list(self, stmt_list):
         # add new block (scope)
-        self.sym_table.push_environment()
+        #self.sym_table.push_environment()
         for stmt in stmt_list.stmts:
             stmt.accept(self)
         # remove new block
-        self.sym_table.pop_environment()
+        #self.sym_table.pop_environment()
     
     def visit_expr_stmt(self, expr_stmt):
         expr_stmt.expr.accept(self)

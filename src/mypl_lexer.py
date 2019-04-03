@@ -58,7 +58,7 @@ class Lexer(object):
             curSymbol += self.__read()
             self.column += 1
             #Keep reading in the string until the next double quotes are found
-            while(self.__peek() != '"' and self.__peek() != '\n'):
+            while(self.__peek() != '"' and self.__peek() != '\n' and self.__peek() != ''):
                 curSymbol += self.__read()
                 self.column += 1
             #Check to see if there was a newline or missing closing quote
