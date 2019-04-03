@@ -89,6 +89,10 @@ Else it will save to repl_save.mypl
 def save(filename):
     print('saving to "%s"... not' % filename)
 
+'''
+printAllCommands()
+This function displays all commands that can be used on the repl
+'''
 def printAllCommands():
     print('~~~~~~~~~~~~~~~ REPL (Read Evaluate Print Loop) Commands ~~~~~~~~~~~~~~~~')
     print('Use ":" before your desired command to call a command. All commands are lower case')
