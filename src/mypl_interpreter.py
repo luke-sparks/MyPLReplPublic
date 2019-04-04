@@ -19,7 +19,6 @@ class Interpreter(ast.Visitor):
         '''
         if(len(self.sym_table.scopes) == 0):
             self.sym_table.push_environment()
-            global_scope_id = self.sym_table.get_env_id()
         # holds the type of last expression type
         self.current_value = None
         # the heap {oid:struct_obj}
