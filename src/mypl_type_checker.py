@@ -50,6 +50,7 @@ class TypeChecker(ast.Visitor):
             Might not be the best implementaion, but trying to get the base REPL working
             '''
             self.sym_table.push_environment()
+            self.global_scope = self.sym_table.get_env_id()
 
     def __error(self, error_msg, error_token):
         s = error_msg

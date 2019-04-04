@@ -19,11 +19,11 @@ class Interpreter(ast.Visitor):
         '''
         if(len(self.sym_table.scopes) == 0):
             self.sym_table.push_environment()
+            global_scope_id = self.sym_table.get_env_id()
         # holds the type of last expression type
         self.current_value = None
         # the heap {oid:struct_obj}
         self.heap = repl_heap
-        self.print_called = False
     
     def __error(self, msg, the_token):
         raise error.MyPLError(msg, the_token.line, the_token.column)
@@ -94,16 +94,12 @@ class Interpreter(ast.Visitor):
 
     def visit_expr_stmt(self, expr_stmt):
         expr_stmt.expr.accept(self)
-        if(not self.print_called):
-            print(self.current_value)
     
     def visit_var_decl_stmt(self, var_decl):
         var_decl.var_expr.accept(self)
         exp_value = self.current_value
         self.sym_table.add_id(var_decl.var_id.lexeme)
         self.sym_table.set_info(var_decl.var_id.lexeme, exp_value)
-        if(not self.print_called):
-            print(self.current_value)
 
     def visit_assign_stmt(self, assign_stmt):
         assign_stmt.rhs.accept(self)

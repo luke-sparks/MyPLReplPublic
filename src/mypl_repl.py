@@ -65,8 +65,15 @@ def main():
                 stmt_list.accept(the_type_checker)
                 the_interpreter = interpreter.Interpreter(value_table, repl_heap)
                 the_interpreter.run(stmt_list)
+                if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'func' not in cur_stmt and 'new' not in cur_stmt):
+                    print(the_interpreter.current_value)
             except error.MyPLError as e:
                 print('Error: %s' % e.message)
+            except TypeError as e:
+                if ('unhashable type' in str(e)):
+                    print('Error: Cannot access elements in undeclared struct')
+                else:
+                    print('Error: %s' % str(e))
 
 
 
