@@ -36,7 +36,7 @@ class Interpreter(ast.Visitor):
             arg.accept(self)
             arg_vals.append(self.current_value)
         #check for nil values
-        for i,arg in enumerate(arg_vals):
+        for arg in enumerate(arg_vals):
             if arg is None:
                 self.__error("Nil value error", call_rvalue.fun)
         #peform each function

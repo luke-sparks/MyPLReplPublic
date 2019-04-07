@@ -13,12 +13,14 @@ import mypl_type_checker as type_checker
 import mypl_interpreter as interpreter
 import mypl_symbol_table as sym_tbl
 import mypl_error as error
+import mypl_print_visitor as ast_printer
 import sys
 from io import StringIO
 
 value_table = sym_tbl.SymbolTable()
 type_table = sym_tbl.SymbolTable()
 repl_heap = {}
+total_stmt = ""
 
 def main():
     print('MyPL REPL Version 0.4')
@@ -30,19 +32,9 @@ def main():
         if (len(cur_stmt) == 0):
             pass
         #Check if a function or struct was declared
-        if ('struct' in cur_stmt or 'fun' in cur_stmt):
-            decl_stmt = cur_stmt
-            finished = False
-            while(not finished):
-                line = '\n' + input('>>> ')
-                if 'end' in line:
-                    yes_no = input('is the declaration finished? (y/n): ')
-                    if yes_no == 'y':
-                        decl_stmt += line
-                        run_stmt(decl_stmt)
-                        finished = True
-                decl_stmt += line
-            
+        if ('struct' in cur_stmt or 'fun' in cur_stmt or 'while' in cur_stmt or 'if' in cur_stmt):
+            final_stmt = end_loop(cur_stmt)
+            run_stmt(final_stmt)
         #Check to see if the current statement is a command
         elif (cur_stmt[0] == ':'):
             if ('help' in cur_stmt):
@@ -62,7 +54,18 @@ def main():
                     load(cur_stmt[1])
             elif ('save' in cur_stmt):
                 #If the command is save, save to given file or create new one
-                print('Save functionality currently not implemented')
+                #Get the filename by seperating the statement on the space
+                cur_stmt = cur_stmt[1:].split()
+                #Make sure the stmt contained a file and that it's a .mypl file
+                if(len(cur_stmt) != 2):
+                    print('Improper usage of save')
+                    print('use ":save filename"')
+                elif(".mypl" not in cur_stmt[1]):
+                    print('Improper usage of save')
+                    print('Can only save ".mypl" files')
+                else:
+                    save(cur_stmt[1], total_stmt)
+                
             elif ('exit' in cur_stmt):
                 keepGoing=False
                 print('Goodbye\n')
@@ -73,6 +76,18 @@ def main():
         else:
             run_stmt(cur_stmt)
 
+        '''print("Below is the test print")
+        #total_stmt += '\n' + cur_stmt
+
+        print('printing total_stmt ----- \n' + total_stmt)
+
+        total_lexer = lexer.Lexer(StringIO(total_stmt))
+        total_parser = parser.Parser(total_lexer)
+        total_stmt_list = total_parser.parse()
+        print_visitor = ast_printer.PrintVisitor(sys.stdout)
+        total_stmt_list.accept(print_visitor)
+        print()'''
+
 '''
 run_stmt()
 this function takes a statement given by the user and attempts to evaluate it within MyPL
@@ -80,26 +95,43 @@ this function takes a statement given by the user and attempts to evaluate it wi
 '''
 
 def run_stmt(cur_stmt):
+    global total_stmt
     try:
-        print("Below is the test print")
-        print(cur_stmt)
-        print()
         the_lexer = lexer.Lexer(StringIO(cur_stmt))
         the_parser = parser.Parser(the_lexer)
         stmt_list = the_parser.parse()
         the_type_checker = type_checker.TypeChecker(type_table)
         stmt_list.accept(the_type_checker)
         the_interpreter = interpreter.Interpreter(value_table, repl_heap)
-        the_interpreter.run(stmt_list)
-        if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'func' not in cur_stmt and 'new' not in cur_stmt):
+        total_stmt += '\n' + cur_stmt
+
+        if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'fun' not in cur_stmt and 'new' not in cur_stmt):
+            print('the_interpreter.current_value')
             print(the_interpreter.current_value)
+
     except error.MyPLError as e:
-        print('Error: %s' % e.message)
+        print('Error1: %s' % e.message)
     except TypeError as e:
         if ('unhashable type' in str(e)):
             print('Error: Cannot access elements in undeclared struct')
         else:
             print('Error: %s' % str(e))
+
+'''
+commenting to come, deals with structs, functions, whiles and ifs
+'''
+def end_loop(cur_stmt):
+    final_stmt = cur_stmt
+    line = '\n' + input('... ')
+    if ('struct' in line or 'fun' in line or 'while' in line or 'if' in line):
+        final_stmt += end_loop(line)
+        line = '\n' + input('... ')
+    while 'end' not in line:
+        final_stmt += line
+        line = '\n' + input('... ')
+    final_stmt += line
+
+    return final_stmt
 
 '''
 load()
@@ -117,8 +149,17 @@ If it recieves a filename, it will save the current context to that file.
 Else it will save to repl_save.mypl
 @param name of file to be save to or empty string
 '''
-def save(filename):
-    print('saving to "%s"... not' % filename)
+def save(filename, total_stmt):
+    total_lexer = lexer.Lexer(StringIO(total_stmt))
+    total_parser = parser.Parser(total_lexer)
+    total_stmt_list = total_parser.parse()
+
+    print('saving to "%s"' % filename)
+    f = open(filename, "w")
+    print_visitor = ast_printer.PrintVisitor(f)
+    total_stmt_list.accept(print_visitor)
+    f.close()
+    
 
 '''
 printAllCommands()

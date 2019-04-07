@@ -301,7 +301,7 @@ class Parser(object):
             self.__advance()
             return simple_rvalue_node
         else:
-            s = 'expected a rvalue found"' + self.current_token.lexeme + '" in parser'
+            s = 'expected a rvalue found "' + self.current_token.lexeme + '" in parser'
             l = self.current_token.line
             c = self.current_token.column
             raise error.MyPLError(s, l, c)
