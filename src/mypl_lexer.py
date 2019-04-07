@@ -47,7 +47,7 @@ class Lexer(object):
                 self.column = 0
             return self.next_token()
 
-        #If there is a letter, get the whole identifyer
+        #If there is a letter, get the whole identifer
         if(self.__peek().isalpha()):
             while(self.__peek().isalpha() or self.__peek().isdigit() or self.__peek() == '_'):
                 curSymbol += self.__read()

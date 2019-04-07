@@ -83,7 +83,7 @@ class Parser(object):
         struct_decl_node = ast.StructDeclStmt()
         self.__eat(token.STRUCTTYPE, "expecting a struct")
         struct_decl_node.struct_id = self.current_token
-        self.__eat(token.ID, "expecting an identifyer")
+        self.__eat(token.ID, "expecting an identifier")
         vDeclsList = []
         self.__vdecls(vDeclsList)
         struct_decl_node.var_decls = vDeclsList
@@ -106,7 +106,7 @@ class Parser(object):
         else:
             fun_decl_node.return_type = self.__type()
         fun_decl_node.fun_name = self.current_token
-        self.__eat(token.ID, "expecting an identifyer")
+        self.__eat(token.ID, "expecting an identifier")
         self.__eat(token.LPAREN, 'expecting a "("')
         fun_decl_node.params = self.__params()
         self.__eat(token.RPAREN, 'expecting a ")"')
@@ -130,7 +130,7 @@ class Parser(object):
                 self.__advance()
                 param_node = ast.FunParam()
                 param_node.param_name = self.current_token
-                self.__eat(token.ID, "expecting an identifyer")
+                self.__eat(token.ID, "expecting an identifier")
                 self.__eat(token.COLON, 'expecting a ":"')
                 param_node.param_type = self.__type()
                 paramsList.append(param_node)
