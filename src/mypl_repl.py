@@ -29,6 +29,20 @@ def main():
         #See if the user just pressed enter
         if (len(cur_stmt) == 0):
             pass
+        #Check if a function or struct was declared
+        if ('struct' in cur_stmt or 'fun' in cur_stmt):
+            decl_stmt = cur_stmt
+            finished = False
+            while(not finished):
+                line = '\n' + input('>>> ')
+                if 'end' in line:
+                    yes_no = input('is the declaration finished? (y/n): ')
+                    if yes_no == 'y':
+                        decl_stmt += line
+                        run_stmt(decl_stmt)
+                        finished = True
+                decl_stmt += line
+            
         #Check to see if the current statement is a command
         elif (cur_stmt[0] == ':'):
             if ('help' in cur_stmt):
@@ -57,25 +71,35 @@ def main():
                 print('Unrecognized command "%s", use ":help" to view all commands.' % (cur_stmt))
         #Not a command, run and evaluate the statement
         else:
-            try:
-                the_lexer = lexer.Lexer(StringIO(cur_stmt))
-                the_parser = parser.Parser(the_lexer)
-                stmt_list = the_parser.parse()
-                the_type_checker = type_checker.TypeChecker(type_table)
-                stmt_list.accept(the_type_checker)
-                the_interpreter = interpreter.Interpreter(value_table, repl_heap)
-                the_interpreter.run(stmt_list)
-                if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'func' not in cur_stmt and 'new' not in cur_stmt):
-                    print(the_interpreter.current_value)
-            except error.MyPLError as e:
-                print('Error: %s' % e.message)
-            except TypeError as e:
-                if ('unhashable type' in str(e)):
-                    print('Error: Cannot access elements in undeclared struct')
-                else:
-                    print('Error: %s' % str(e))
+            run_stmt(cur_stmt)
 
+'''
+run_stmt()
+this function takes a statement given by the user and attempts to evaluate it within MyPL
+@param the current user defined statement
+'''
 
+def run_stmt(cur_stmt):
+    try:
+        print("Below is the test print")
+        print(cur_stmt)
+        print()
+        the_lexer = lexer.Lexer(StringIO(cur_stmt))
+        the_parser = parser.Parser(the_lexer)
+        stmt_list = the_parser.parse()
+        the_type_checker = type_checker.TypeChecker(type_table)
+        stmt_list.accept(the_type_checker)
+        the_interpreter = interpreter.Interpreter(value_table, repl_heap)
+        the_interpreter.run(stmt_list)
+        if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'func' not in cur_stmt and 'new' not in cur_stmt):
+            print(the_interpreter.current_value)
+    except error.MyPLError as e:
+        print('Error: %s' % e.message)
+    except TypeError as e:
+        if ('unhashable type' in str(e)):
+            print('Error: Cannot access elements in undeclared struct')
+        else:
+            print('Error: %s' % str(e))
 
 '''
 load()
