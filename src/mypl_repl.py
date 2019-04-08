@@ -17,11 +17,10 @@ import mypl_print_visitor as ast_printer
 import sys
 from io import StringIO
 # install https://pypi.org/project/pynput/#files
-# I did ' pip install pynput-1.4.2-py2.py3-none-any.whl ' while in CMD from that directory
-# installed pip through bash
-from pynput import keyboard
-from pynput.keyboard import Key
-#from pynput.keyboard import Key, Controller
+# pynput is being frustrating so I may use something else
+# from pynput import keyboard
+# from pynput.keyboard import Key
+# from pynput.keyboard import Key, Controller
 
 value_table = sym_tbl.SymbolTable()
 type_table = sym_tbl.SymbolTable()
