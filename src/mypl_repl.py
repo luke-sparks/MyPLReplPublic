@@ -16,23 +16,36 @@ import mypl_error as error
 import mypl_print_visitor as ast_printer
 import sys
 from io import StringIO
+# install https://pypi.org/project/pynput/#files
+# I did ' pip install pynput-1.4.2-py2.py3-none-any.whl ' while in CMD from that directory
+# installed pip through bash
+from pynput import keyboard
+from pynput.keyboard import Key
+#from pynput.keyboard import Key, Controller
 
 value_table = sym_tbl.SymbolTable()
 type_table = sym_tbl.SymbolTable()
 repl_heap = {}
-total_stmt = ""
+total_stmt = ast.StmtList()
+cur_cmd = -1
 
 def main():
     print('MyPL REPL Version 0.4')
     print('Use ":" for commands, :help for list of commands.')
     keepGoing = True
+    '''listener = keyboard.Listener(on_press = on_press)
+    listener.start()'''
+    '''up_listener = keyboard.Listener(on_press = on_press(Key.up))
+    down_listener = keyboard.Listener(on_press = on_press(Key.down))
+    up_listener.start()
+    down_listener.start()'''
     while(keepGoing):
         cur_stmt = input('>>> ')
         #See if the user just pressed enter
         if (len(cur_stmt) == 0):
             pass
         #Check if a function or struct was declared
-        if ('struct' in cur_stmt or 'fun' in cur_stmt or 'while' in cur_stmt or 'if' in cur_stmt):
+        elif ('struct' in cur_stmt or 'fun' in cur_stmt or 'while' in cur_stmt or 'if' in cur_stmt):
             final_stmt = end_loop(cur_stmt)
             run_stmt(final_stmt)
         #Check to see if the current statement is a command
@@ -64,7 +77,7 @@ def main():
                     print('Improper usage of save')
                     print('Can only save ".mypl" files')
                 else:
-                    save(cur_stmt[1], total_stmt)
+                    save(cur_stmt[1])
                 
             elif ('exit' in cur_stmt):
                 keepGoing=False
@@ -75,18 +88,7 @@ def main():
         #Not a command, run and evaluate the statement
         else:
             run_stmt(cur_stmt)
-
-        '''print("Below is the test print")
-        #total_stmt += '\n' + cur_stmt
-
-        print('printing total_stmt ----- \n' + total_stmt)
-
-        total_lexer = lexer.Lexer(StringIO(total_stmt))
-        total_parser = parser.Parser(total_lexer)
-        total_stmt_list = total_parser.parse()
-        print_visitor = ast_printer.PrintVisitor(sys.stdout)
-        total_stmt_list.accept(print_visitor)
-        print()'''
+    #listener.stop()
 
 '''
 run_stmt()
@@ -95,7 +97,6 @@ this function takes a statement given by the user and attempts to evaluate it wi
 '''
 
 def run_stmt(cur_stmt):
-    global total_stmt
     try:
         the_lexer = lexer.Lexer(StringIO(cur_stmt))
         the_parser = parser.Parser(the_lexer)
@@ -104,7 +105,8 @@ def run_stmt(cur_stmt):
         stmt_list.accept(the_type_checker)
         the_interpreter = interpreter.Interpreter(value_table, repl_heap)
         the_interpreter.run(stmt_list)
-        total_stmt += '\n' + cur_stmt
+        total_stmt.stmts.append(stmt_list)
+        cur_cmd = len(total_stmt.stmts) + 1
 
         if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'fun' not in cur_stmt and 'new' not in cur_stmt):
             print('the_interpreter.current_value')
@@ -150,15 +152,21 @@ If it recieves a filename, it will save the current context to that file.
 Else it will save to repl_save.mypl
 @param name of file to be save to or empty string
 '''
-def save(filename, total_stmt):
-    total_lexer = lexer.Lexer(StringIO(total_stmt))
-    total_parser = parser.Parser(total_lexer)
-    total_stmt_list = total_parser.parse()
+def save(filename):
+    #total_lexer = lexer.Lexer(StringIO(total_stmt))
+    #total_parser = parser.Parser(total_lexer)
+    #total_stmt_list = total_parser.parse()
 
     print('saving to "%s"' % filename)
     f = open(filename, "w")
     print_visitor = ast_printer.PrintVisitor(f)
-    total_stmt_list.accept(print_visitor)
+    total_stmt.accept(print_visitor)
+
+    '''for stmt in total_stmt.stmts:
+        stmt.accept(print_visitor)
+
+    total_stmt.stmts[3].accept(print_visitor)'''
+
     f.close()
     
 
@@ -176,5 +184,37 @@ def printAllCommands():
     print('       \tIf a filename is not specified, everything will be saved into a new file, repl_save.mypl\n')
     print('"exit":\tUse exit to quit out of the REPL loop')
     print()
+
+'''def on_press(key):
+    global cur_cmd
+    try:
+        #print(key)
+        if cur_cmd > -1:
+            total_stmt.stmts[cur_cmd].accept(sys.stdout)
+            cur_cmd -= 1
+            print('hi')
+        if key == Key.up:
+            if cur_cmd > -1:
+                total_stmt.stmts[cur_cmd].accept(sys.stdout)
+                print('test')
+                cur_cmd -= 1
+        elif key == Key.down:
+            if cur_cmd > -1:
+                total_stmt.stmts[cur_cmd].accept(sys.stdout)
+                cur_cmd += 1
+    except AttributeError as e:
+        print('error')
+    
+    try:
+        print('alphanumeric key {0} pressed'.format(key.char))
+    except AttributeError:
+        print('special key {0} pressed'.format(key))'''
+        
+'''def on_release(key):
+    print('{0} released'.format(
+        key))
+    if key == keyboard.Key.esc:
+        # Stop listener
+        return False'''
 
 main()
