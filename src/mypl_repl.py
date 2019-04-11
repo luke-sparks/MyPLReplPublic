@@ -82,8 +82,11 @@ def main():
                 keepGoing=False
                 print('Goodbye\n')
             else:
-                cur_stmt = cur_stmt[1:].split()[0]
-                print('Unrecognized command "%s", use ":help" to view all commands.' % (cur_stmt))
+                if(cur_stmt == ':'):
+                    print('Missing command')
+                else:
+                    cur_stmt = cur_stmt[1:].split()[0]
+                    print('Unrecognized command "%s", use ":help" to view all commands.' % (cur_stmt))
         #Not a command, run and evaluate the statement
         else:
             run_stmt(cur_stmt)
@@ -106,13 +109,29 @@ def run_stmt(cur_stmt):
         the_interpreter.run(stmt_list)
         total_stmt.stmts.append(stmt_list)
         cur_cmd = len(total_stmt.stmts) + 1
-
-        if('print(' not in cur_stmt and 'struct' not in cur_stmt and 'fun' not in cur_stmt and 'new' not in cur_stmt):
-            print('the_interpreter.current_value')
-            print(the_interpreter.current_value)
-
+        #Check to see if someone is trying to call a function w/o parameters
+        #or a struct by name instead of a declared object
+        struct_or_func_decl = the_interpreter.current_value
+        if (isinstance(struct_or_func_decl, list)):
+            if(isinstance(struct_or_func_decl[1], ast.FunDeclStmt)):
+                print('Missing parentheses on function call "%s"' % cur_stmt[:-1])
+            elif(isinstance(struct_or_func_decl[1], ast.StructDeclStmt)):
+                print('Attempting to call un-instantiated struct "%s"' % cur_stmt[:-1])
+            else:
+                print('No one should be here')
+                print(struct_or_func_decl)
+        else:
+            if('(' not in cur_stmt and 'struct' not in cur_stmt and 'new' not in cur_stmt):
+                print('the_interpreter.current_value')
+                print(the_interpreter.current_value)
     except error.MyPLError as e:
         print('Error: %s' % e.message)
+        if 'fun' in cur_stmt:
+            funName = cur_stmt.split()[2]
+            funName = funName.split('(')[0]
+            if type_table.id_exists(funName):
+                type_table.remove_id(funName)
+                
     except TypeError as e:
         if ('unhashable type' in str(e)):
             print('Error: Cannot access elements in undeclared struct')

@@ -32,7 +32,13 @@ class SymbolTable(object):
             return
         # add to the current environment id
         self.scopes[self.__get_env_index()][identifier] = None
-    
+
+    def remove_id(self, identifier):
+        index = self.__get_env_index()
+        for i in range(index, -1, -1):
+            if identifier in self.scopes[i]:
+                del self.scopes[i][identifier]
+
     def get_info(self, identifier):
         env = self.__environment(identifier)
         if env is not None:
