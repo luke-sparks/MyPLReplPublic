@@ -135,6 +135,7 @@ class PrintVisitor(ast.Visitor):
             self.__write(simple_rvalue.val.lexeme)
 
     def visit_new_rvalue(self, new_rvalue):
+        self.__write('new ')
         self.__write(new_rvalue.struct_type.lexeme)
 
     def visit_call_rvalue(self, call_rvalue):

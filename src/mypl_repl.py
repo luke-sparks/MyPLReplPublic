@@ -15,6 +15,8 @@ import mypl_symbol_table as sym_tbl
 import mypl_error as error
 import mypl_print_visitor as ast_printer
 import sys
+# needed for load
+import copy
 from io import StringIO
 # install https://pypi.org/project/pynput/#files
 # pynput is being frustrating so I may use something else
@@ -68,15 +70,15 @@ def main():
                 #If the command is save, save to given file or create new one
                 #Get the filename by seperating the statement on the space
                 cur_stmt = cur_stmt[1:].split()
-                #Make sure the stmt contained a file and that it's a .mypl file
+                '''#Make sure the stmt contained a file and that it's a .mypl file
                 if(len(cur_stmt) != 2):
                     print('Improper usage of save')
                     print('use ":save filename"')
                 elif(".mypl" not in cur_stmt[1]):
                     print('Improper usage of save')
                     print('Can only save ".mypl" files')
-                else:
-                    save(cur_stmt[1])
+                else:'''
+                save(cur_stmt[1])
                 
             elif ('exit' in cur_stmt):
                 keepGoing=False
@@ -139,18 +141,26 @@ def run_stmt(cur_stmt):
             print('Error: %s' % str(e))
 
 '''
-commenting to come, deals with structs, functions, whiles and ifs
+end_loop()
+This function deals with multi-line structs, functions, whiles and ifs
+Also checks for single-line declarations
+@param current statement in the repl
 '''
 def end_loop(cur_stmt):
     final_stmt = cur_stmt
-    line = '\n' + input('... ')
-    if ('struct' in line or 'fun' in line or 'while' in line or 'if' in line):
-        final_stmt += end_loop(line)
+    # deals with 1-line declarations of structs, functions, while loops, and if statements
+    # allows us to use a 'command history' in the future
+    if ('struct' in final_stmt or 'fun' in final_stmt or 'while' in final_stmt or 'if' in final_stmt) and ('end' in final_stmt):
+        pass
+    else:
         line = '\n' + input('... ')
-    while 'end' not in line:
+        if ('struct' in line or 'fun' in line or 'while' in line or 'if' in line):
+            final_stmt += end_loop(line)
+            line = '\n' + input('... ')
+        while 'end' not in line:
+            final_stmt += line
+            line = '\n' + input('... ')
         final_stmt += line
-        line = '\n' + input('... ')
-    final_stmt += line
 
     return final_stmt
 
@@ -161,7 +171,49 @@ the contents from the files into the current REPL context.
 @param name of file to be opened
 '''
 def load(filename):
-    print('loading "%s"... not' % filename)
+    print('loading "%s" into REPL' % filename)
+
+    f = open(filename, "r")
+
+    global type_table
+    global value_table
+    global repl_heap
+    global total_stmt
+
+    try:
+        current_total_stmt = copy.deepcopy(total_stmt)
+
+        file_lexer = lexer.Lexer(f)
+        file_parser = parser.Parser(file_lexer)
+        file_stmt_list = file_parser.parse()
+
+        current_total_stmt.stmts.append(file_stmt_list)
+
+        # new storage vars to deal with errors
+        file_type_table = copy.deepcopy(type_table)
+        file_value_table = copy.deepcopy(value_table)
+        file_repl_heap = copy.deepcopy(repl_heap)
+
+        file_type_checker = type_checker.TypeChecker(file_type_table)
+        file_stmt_list.accept(file_type_checker)
+        file_interpreter = interpreter.Interpreter(file_value_table, file_repl_heap)
+        file_interpreter.run(file_stmt_list)
+        
+        cur_cmd = len(current_total_stmt.stmts) + 1
+
+        # set actual storage to the new ones if no error has been caught
+        type_table = file_type_table
+        value_table = file_value_table
+        repl_heap = file_repl_heap
+        total_stmt = current_total_stmt
+
+    except error.MyPLError as e:
+        print('Error: %s' % e.message)
+
+    f.close()
+
+
+
 
 '''
 save()
@@ -174,6 +226,9 @@ def save(filename):
     #total_lexer = lexer.Lexer(StringIO(total_stmt))
     #total_parser = parser.Parser(total_lexer)
     #total_stmt_list = total_parser.parse()
+
+    if filename == "":
+        filename = "repl_save.mypl"
 
     print('saving to "%s"' % filename)
     f = open(filename, "w")
