@@ -117,9 +117,23 @@ class TypeChecker(ast.Visitor):
         rhs_type = self.current_type
         assign_stmt.lhs.accept(self)
         lhs_type = self.current_type
-        if rhs_type != token.NIL and rhs_type != lhs_type:
-            msg = 'Mismatch type in assignment'
-            self.__error(msg, assign_stmt.lhs.path[0])
+
+        if isinstance(lhs_type, token.Token) and isinstance(rhs_type, token.Token):
+            if rhs_type.tokentype != token.NIL and rhs_type.tokentype != lhs_type.tokentype:
+                msg = 'Mismatch type in assignment'
+                self.__error(msg, assign_stmt.lhs.path[0])
+        elif isinstance(lhs_type, token.Token):
+            if rhs_type != token.NIL and rhs_type != lhs_type.tokentype:
+                msg = 'Mismatch type in assignment'
+                self.__error(msg, assign_stmt.lhs.path[0])
+        elif isinstance(rhs_type, token.Token):
+            if rhs_type.tokentype != token.NIL and rhs_type.tokentype != lhs_type:
+                msg = 'Mismatch type in assignment'
+                self.__error(msg, assign_stmt.lhs.path[0])
+        else:
+            if rhs_type != token.NIL and rhs_type != lhs_type:
+                msg = 'Mismatch type in assignment'
+                self.__error(msg, assign_stmt.lhs.path[0])
 
     def visit_lvalue(self, lvalue):
         var_token = lvalue.path[0]
@@ -144,6 +158,9 @@ class TypeChecker(ast.Visitor):
             self.current_type = self.sym_table.get_info(type_token.lexeme)
 
     def visit_struct_decl_stmt(self, struct_decl_stmt):
+        if (self.sym_table.id_exists(struct_decl_stmt.struct_id.lexeme)):
+            msg = 'Struct "%s" already declared' % struct_decl_stmt.struct_id.lexeme
+            self.__error(msg, struct_decl_stmt.struct_id)
         self.sym_table.add_id(struct_decl_stmt.struct_id.lexeme)
         namesAndTypes = {}
         self.sym_table.push_environment()
@@ -163,7 +180,7 @@ class TypeChecker(ast.Visitor):
         pastParams = []
         return_type = fun_decl_stmt.return_type
         self.sym_table.add_id('return')
-        self.sym_table.set_info('return', fun_decl_stmt.return_type)
+        self.sym_table.set_info('return', return_type.tokentype)
         for param in fun_decl_stmt.params:
             param.accept(self)
             param_type = self.current_type
@@ -199,10 +216,54 @@ class TypeChecker(ast.Visitor):
                 if (return_stmt.return_expr.term.val.lexeme == '0'):
                     isZeroExpr = True
         fun_return_type = self.sym_table.get_info('return')
+
+        if isinstance(return_type, token.Token):
+            if not isZeroExpr and return_type != token.NIL and fun_return_type != return_type.tokentype:# and not fun_return_type.lexeme == return_type and not fun_return_type == return_type:
+                msg = 'Incorrect return type "%s", expecting "%s"' % (return_type, fun_return_type)
+                self.__error(msg, return_stmt.return_token)
+        else:
+            if not isZeroExpr and return_type != token.NIL and fun_return_type != return_type:# and not fun_return_type.lexeme == return_type and not fun_return_type == return_type:
+                msg = 'Incorrect return type "%s", expecting "%s"' % (return_type, fun_return_type)
+                self.__error(msg, return_stmt.return_token)
+        self.current_type = 'return_declared'
+
+    '''def visit_return_stmt(self, return_stmt):
+        if(return_stmt.return_expr != None):
+            return_stmt.return_expr.accept(self)
+            return_type = self.current_type
+        else:
+            return_type = token.NIL
+        isZeroExpr = False
+        if isinstance(return_stmt.return_expr, ast.SimpleExpr):
+            if isinstance(return_stmt.return_expr.term, ast.SimpleRValue):
+                if (return_stmt.return_expr.term.val.lexeme == '0'):
+                    isZeroExpr = True
+        fun_return_type = self.sym_table.get_info('return')
+
+        print('first')
+        if type(fun_return_type) == token.Token:
+            print(fun_return_type.tokentype)
+            print(type(fun_return_type.tokentype))
+            print('third')
+            print(fun_return_type.lexeme)
+            print(type(fun_return_type.lexeme))
+        print('second')
+        print(return_type)
+        print(type(return_type))        
+        print('final')
+
         if fun_return_type.tokentype != return_type and not isZeroExpr and return_type != token.NIL and not fun_return_type.lexeme == return_type:
             msg = 'Incorrect return type "%s", expecting "%s"' % (return_type, fun_return_type)
             self.__error(msg, return_stmt.return_token)
         self.current_type = 'return_declared'
+        
+
+        \'''if (fun_return_type.lexeme == return_type or fun_return_type.tokentype != return_type) and not isZeroExpr and return_type != token.NIL:# and not fun_return_type.lexeme == return_type:
+            msg = 'Incorrect return type "%s", expecting "%s"' % (return_type, fun_return_type)
+            self.__error(msg, return_stmt.return_token)
+        self.current_type = 'return_declared'
+        \'''
+        '''
 
     def visit_while_stmt(self, while_stmt):
         while_stmt.bool_expr.accept(self)

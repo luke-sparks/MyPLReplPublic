@@ -79,7 +79,9 @@ def main():
                     print('Can only save ".mypl" files')
                 else:'''
                 save(cur_stmt[1])
-                
+            elif ('clear' in cur_stmt):
+                clear()
+                print('Cleared REPL')
             elif ('exit' in cur_stmt):
                 keepGoing=False
                 print('Goodbye\n')
@@ -188,24 +190,24 @@ def load(filename):
         file_stmt_list = file_parser.parse()
 
         current_total_stmt.stmts.append(file_stmt_list)
+        
+        #cur_cmd = len(current_total_stmt.stmts) + 1
 
-        # new storage vars to deal with errors
-        file_type_table = copy.deepcopy(type_table)
-        file_value_table = copy.deepcopy(value_table)
-        file_repl_heap = copy.deepcopy(repl_heap)
+        # copy storage so as to not modify REPL if error
+        file_type_table = type_table
+        file_value_table = value_table
+        file_repl_heap = repl_heap
 
         file_type_checker = type_checker.TypeChecker(file_type_table)
         file_stmt_list.accept(file_type_checker)
         file_interpreter = interpreter.Interpreter(file_value_table, file_repl_heap)
-        file_interpreter.run(file_stmt_list)
-        
-        cur_cmd = len(current_total_stmt.stmts) + 1
+        file_interpreter.run(current_total_stmt)
 
         # set actual storage to the new ones if no error has been caught
         type_table = file_type_table
         value_table = file_value_table
         repl_heap = file_repl_heap
-        total_stmt = current_total_stmt
+        total_stmt = copy.deepcopy(current_total_stmt)
 
     except error.MyPLError as e:
         print('Error: %s' % e.message)
@@ -242,6 +244,23 @@ def save(filename):
 
     f.close()
     
+'''
+clear()
+This function clears the REPL.
+'''
+def clear():
+    global value_table
+    global type_table
+    global repl_heap
+    global total_stmt
+    global cur_cmd
+
+    value_table = sym_tbl.SymbolTable()
+    type_table = sym_tbl.SymbolTable()
+    repl_heap = {}
+    total_stmt = ast.StmtList()
+    cur_cmd = -1
+
 
 '''
 printAllCommands()
@@ -251,11 +270,12 @@ def printAllCommands():
     print('~~~~~~~~~~~~~~~ REPL (Read Evaluate Print Loop) Commands ~~~~~~~~~~~~~~~~')
     print('Use ":" before your desired command to call a command. All commands are lower case')
     print('All files must be of ".mypl" extension to be loaded and saved')
-    print('"help":\tPrints out all commands and how to use them\n')
-    print('"load":\tUse load along with a filename to load a .mypl file into the REPL\n')
-    print('"save":\tUse save along with a filename to save all current variables, functions and structs')
-    print('       \tIf a filename is not specified, everything will be saved into a new file, repl_save.mypl\n')
-    print('"exit":\tUse exit to quit out of the REPL loop')
+    print('"help":  Prints out all commands and how to use them\n')
+    print('"load":  Use load along with a filename to load a .mypl file into the REPL\n')
+    print('"save":  Use save along with a filename to save all current variables, functions and structs')
+    print('         If a filename is not specified, everything will be saved into a new file, repl_save.mypl\n')
+    print('"clear": Clears all statements from REPL. Useful when saving and loading with files\n')
+    print('"exit":  Use exit to quit out of the REPL loop')
     print()
 
 '''def on_press(key):

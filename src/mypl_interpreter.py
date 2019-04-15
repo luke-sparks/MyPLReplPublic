@@ -29,16 +29,17 @@ class Interpreter(ast.Visitor):
     
     def __built_in_fun_helper(self, call_rvalue):
         fun_name = call_rvalue.fun.lexeme
-        if fun_name == 'print':
-            self.print_called=True
         arg_vals = []
         for arg in call_rvalue.args:
             arg.accept(self)
-            arg_vals.append(self.current_value)
+            if self.current_value == 'nil':
+                arg_vals.append(None)
+            else:
+                arg_vals.append(self.current_value)
         #check for nil values
-        for arg in enumerate(arg_vals):
+        for arg in arg_vals:
             if arg is None:
-                self.__error("Nil value error", call_rvalue.fun)
+                self.__error("nil value error", call_rvalue.fun)
         #peform each function
         if fun_name == 'print':
             arg_vals[0] = arg_vals[0].replace(r'\n', '\n')
@@ -110,13 +111,13 @@ class Interpreter(ast.Visitor):
             self.sym_table.set_info(identifier, self.current_value)
         else:
             identifier = self.sym_table.get_info(identifier)
-            struct_vals = self.heap[identifier]
+            struct_vals = self.heap.get(identifier)#[identifier]
             cur_oid = identifier
             final_id = None
             for cur_id in lvalue.path[1:]:
                 id_val = struct_vals[cur_id.lexeme]
                 if id_val in self.heap:
-                    struct_vals = self.heap[id_val]
+                    struct_vals = self.heap.get(id_val)#[id_val]
                     cur_oid = id_val
                 final_id = cur_id.lexeme
             self.heap[cur_oid][final_id] = self.current_value
@@ -219,7 +220,7 @@ class Interpreter(ast.Visitor):
             self.sym_table.pop_environment()
             self.sym_table.set_env_id(cur_env)
 
-    def visit_id_rvalue(self, id_rvalue):
+    '''def visit_id_rvalue(self, id_rvalue):
         var_name = id_rvalue.path[0].lexeme
         var_val = self.sym_table.get_info(var_name)
         if len(id_rvalue.path) > 1:
@@ -232,6 +233,21 @@ class Interpreter(ast.Visitor):
                 else:
                     final_id = cur_id.lexeme
                     var_val = struct_vals[final_id]
+        self.current_value = var_val'''
+
+    def visit_id_rvalue(self, id_rvalue):
+        var_name = id_rvalue.path[0].lexeme
+        var_val = self.sym_table.get_info(var_name)
+        if len(id_rvalue.path) > 1:
+            struct_vals = self.heap.get(var_val)#[var_val]
+            for cur_id in id_rvalue.path[1:]:
+                id_val = struct_vals.get(cur_id.lexeme)#[cur_id.lexeme]
+                if id_val in self.heap:
+                    struct_vals = self.heap.get(id_val)#[id_val]
+                    var_val = id_val
+                else:
+                    final_id = cur_id.lexeme
+                    var_val = struct_vals.get(final_id)#[final_id]
         self.current_value = var_val
 
     def visit_complex_expr(self, complex_expr):
