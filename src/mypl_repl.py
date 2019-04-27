@@ -18,11 +18,6 @@ import sys
 # needed for load
 import copy
 from io import StringIO
-# install https://pypi.org/project/pynput/#files
-# pynput is being frustrating so I may use something else
-# from pynput import keyboard
-# from pynput.keyboard import Key
-# from pynput.keyboard import Key, Controller
 
 value_table = sym_tbl.SymbolTable()
 type_table = sym_tbl.SymbolTable()
@@ -30,34 +25,29 @@ repl_heap = {}
 total_stmt = ast.StmtList()
 cur_cmd = -1
 
+
 def main():
     print('MyPL REPL Version 0.4')
     print('Use ":" for commands, :help for list of commands.')
     keepGoing = True
-    '''listener = keyboard.Listener(on_press = on_press)
-    listener.start()'''
-    '''up_listener = keyboard.Listener(on_press = on_press(Key.up))
-    down_listener = keyboard.Listener(on_press = on_press(Key.down))
-    up_listener.start()
-    down_listener.start()'''
     while(keepGoing):
         cur_stmt = input('>>> ')
-        #See if the user just pressed enter
+        # See if the user just pressed enter
         if (len(cur_stmt) == 0):
             pass
-        #Check if a function or struct was declared
+        # Check if a function or struct was declared
         elif ('struct' in cur_stmt or 'fun' in cur_stmt or 'while' in cur_stmt or 'if' in cur_stmt):
             final_stmt = end_loop(cur_stmt)
             run_stmt(final_stmt)
-        #Check to see if the current statement is a command
+        # Check to see if the current statement is a command
         elif (cur_stmt[0] == ':'):
             if ('help' in cur_stmt):
                 printAllCommands()
             elif ('load' in cur_stmt):
-                #If the command is load, load whatever file the user gave
-                #Get the filename by seperating the statement on the space
+                # If the command is load, load whatever file the user gave
+                # Get the filename by seperating the statement on the space
                 cur_stmt = cur_stmt[1:].split()
-                #Make sure the stmt contained a file and that it's a .mypl file
+                # Make sure the stmt contained a file and that it's a .mypl file
                 if(len(cur_stmt) != 2):
                     print('Improper usage of load')
                     print('use ":load filename"')
@@ -67,41 +57,34 @@ def main():
                 else:
                     load(cur_stmt[1])
             elif ('save' in cur_stmt):
-                #If the command is save, save to given file or create new one
-                #Get the filename by seperating the statement on the space
+                # If the command is save, save to given file or create new one
+                # Get the filename by seperating the statement on the space
                 cur_stmt = cur_stmt[1:].split()
-                '''#Make sure the stmt contained a file and that it's a .mypl file
-                if(len(cur_stmt) != 2):
-                    print('Improper usage of save')
-                    print('use ":save filename"')
-                elif(".mypl" not in cur_stmt[1]):
-                    print('Improper usage of save')
-                    print('Can only save ".mypl" files')
-                else:'''
                 save(cur_stmt[1])
             elif ('clear' in cur_stmt):
                 clear()
                 print('Cleared REPL')
             elif ('exit' in cur_stmt):
-                keepGoing=False
+                keepGoing = False
                 print('Goodbye\n')
             else:
                 if(cur_stmt == ':'):
                     print('Missing command')
                 else:
                     cur_stmt = cur_stmt[1:].split()[0]
-                    print('Unrecognized command "%s", use ":help" to view all commands.' % (cur_stmt))
-        #Not a command, run and evaluate the statement
+                    print(
+                        'Unrecognized command "%s", use ":help" to view all commands.' % (cur_stmt))
+        # Not a command, run and evaluate the statement
         else:
             run_stmt(cur_stmt)
-    #listener.stop()
+    # listener.stop()
+
 
 '''
 run_stmt()
 this function takes a statement given by the user and attempts to evaluate it within MyPL
 @param the current user defined statement
 '''
-
 def run_stmt(cur_stmt):
     try:
         the_lexer = lexer.Lexer(StringIO(cur_stmt))
@@ -113,14 +96,16 @@ def run_stmt(cur_stmt):
         the_interpreter.run(stmt_list)
         total_stmt.stmts.append(stmt_list)
         cur_cmd = len(total_stmt.stmts) + 1
-        #Check to see if someone is trying to call a function w/o parameters
-        #or a struct by name instead of a declared object
+        # Check to see if someone is trying to call a function w/o parameters
+        # or a struct by name instead of a declared object
         struct_or_func_decl = the_interpreter.current_value
         if (isinstance(struct_or_func_decl, list)):
             if(isinstance(struct_or_func_decl[1], ast.FunDeclStmt)):
-                print('Missing parentheses on function call "%s"' % cur_stmt[:-1])
+                print('Missing parentheses on function call "%s"' %
+                      cur_stmt[:-1])
             elif(isinstance(struct_or_func_decl[1], ast.StructDeclStmt)):
-                print('Attempting to call un-instantiated struct "%s"' % cur_stmt[:-1])
+                print('Attempting to call un-instantiated struct "%s"' %
+                      cur_stmt[:-1])
             else:
                 print('No one should be here')
                 print(struct_or_func_decl)
@@ -135,12 +120,13 @@ def run_stmt(cur_stmt):
             funName = funName.split('(')[0]
             if type_table.id_exists(funName):
                 type_table.remove_id(funName)
-                
+
     except TypeError as e:
         if ('unhashable type' in str(e)):
             print('Error: Cannot access elements in undeclared struct')
         else:
             print('Error: %s' % str(e))
+
 
 '''
 end_loop()
@@ -166,6 +152,7 @@ def end_loop(cur_stmt):
 
     return final_stmt
 
+
 '''
 load()
 This function takes in a filename as a string and loads
@@ -190,7 +177,7 @@ def load(filename):
         file_stmt_list = file_parser.parse()
 
         current_total_stmt.stmts.append(file_stmt_list)
-        
+
         #cur_cmd = len(current_total_stmt.stmts) + 1
 
         # copy storage so as to not modify REPL if error
@@ -200,7 +187,8 @@ def load(filename):
 
         file_type_checker = type_checker.TypeChecker(file_type_table)
         file_stmt_list.accept(file_type_checker)
-        file_interpreter = interpreter.Interpreter(file_value_table, file_repl_heap)
+        file_interpreter = interpreter.Interpreter(
+            file_value_table, file_repl_heap)
         file_interpreter.run(current_total_stmt)
 
         # set actual storage to the new ones if no error has been caught
@@ -213,8 +201,6 @@ def load(filename):
         print('Error: %s' % e.message)
 
     f.close()
-
-
 
 
 '''
@@ -243,7 +229,8 @@ def save(filename):
     total_stmt.stmts[3].accept(print_visitor)'''
 
     f.close()
-    
+
+
 '''
 clear()
 This function clears the REPL.
@@ -278,36 +265,5 @@ def printAllCommands():
     print('"exit":  Use exit to quit out of the REPL loop')
     print()
 
-'''def on_press(key):
-    global cur_cmd
-    try:
-        #print(key)
-        if cur_cmd > -1:
-            total_stmt.stmts[cur_cmd].accept(sys.stdout)
-            cur_cmd -= 1
-            print('hi')
-        if key == Key.up:
-            if cur_cmd > -1:
-                total_stmt.stmts[cur_cmd].accept(sys.stdout)
-                print('test')
-                cur_cmd -= 1
-        elif key == Key.down:
-            if cur_cmd > -1:
-                total_stmt.stmts[cur_cmd].accept(sys.stdout)
-                cur_cmd += 1
-    except AttributeError as e:
-        print('error')
-    
-    try:
-        print('alphanumeric key {0} pressed'.format(key.char))
-    except AttributeError:
-        print('special key {0} pressed'.format(key))'''
-        
-'''def on_release(key):
-    print('{0} released'.format(
-        key))
-    if key == keyboard.Key.esc:
-        # Stop listener
-        return False'''
 
 main()
