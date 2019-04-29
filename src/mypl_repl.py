@@ -19,6 +19,12 @@ import sys
 import copy
 from io import StringIO
 
+# history
+try:
+    import readline
+except ImportError:
+    readline = None
+
 value_table = sym_tbl.SymbolTable()
 type_table = sym_tbl.SymbolTable()
 repl_heap = {}
@@ -27,6 +33,10 @@ cur_cmd = -1
 
 
 def main():
+    vocab = {'MyPL', 'bowers', 'repl', 'opl'}
+    readline.parse_and_bind('tab: complete')
+    readline.set_completer(make_completer(vocab))
+
     print('MyPL REPL Version 0.4')
     print('Use ":" for commands, :help for list of commands.')
     keepGoing = True
@@ -78,6 +88,12 @@ def main():
         else:
             run_stmt(cur_stmt)
     # listener.stop()
+
+def make_completer(vocab):
+    def custom_complete(text, state):
+        results = [x + ' ' for x in vocab if x.startswith(text)] + [None]
+        return results[state]
+    return custom_complete
 
 
 '''
