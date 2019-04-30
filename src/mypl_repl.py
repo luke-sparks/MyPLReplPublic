@@ -29,7 +29,6 @@ value_table = sym_tbl.SymbolTable()
 type_table = sym_tbl.SymbolTable()
 repl_heap = {}
 total_stmt = ast.StmtList()
-cur_cmd = -1
 
 
 def main():
@@ -91,7 +90,6 @@ def main():
         # Not a command, run and evaluate the statement
         else:
             run_stmt(cur_stmt)
-    # listener.stop()
 
 def make_completer(vocab):
     def custom_complete(text, state):
@@ -115,7 +113,6 @@ def run_stmt(cur_stmt):
         the_interpreter = interpreter.Interpreter(value_table, repl_heap)
         the_interpreter.run(stmt_list)
         total_stmt.stmts.append(stmt_list)
-        cur_cmd = len(total_stmt.stmts) + 1
         # Check to see if someone is trying to call a function w/o parameters
         # or a struct by name instead of a declared object
         struct_or_func_decl = the_interpreter.current_value
@@ -200,8 +197,6 @@ def load(filename):
 
         current_total_stmt.stmts.append(file_stmt_list)
 
-        #cur_cmd = len(current_total_stmt.stmts) + 1
-
         # copy storage so as to not modify REPL if error
         file_type_table = type_table
         file_value_table = value_table
@@ -233,9 +228,6 @@ Else it will save to repl_save.mypl
 @param name of file to be save to or empty string
 '''
 def save(filename):
-    #total_lexer = lexer.Lexer(StringIO(total_stmt))
-    #total_parser = parser.Parser(total_lexer)
-    #total_stmt_list = total_parser.parse()
 
     if filename == "":
         filename = "repl_save.mypl"
@@ -244,11 +236,6 @@ def save(filename):
     f = open(filename, "w")
     print_visitor = ast_printer.PrintVisitor(f)
     total_stmt.accept(print_visitor)
-
-    '''for stmt in total_stmt.stmts:
-        stmt.accept(print_visitor)
-
-    total_stmt.stmts[3].accept(print_visitor)'''
 
     f.close()
 
@@ -262,13 +249,11 @@ def clear():
     global type_table
     global repl_heap
     global total_stmt
-    global cur_cmd
 
     value_table = sym_tbl.SymbolTable()
     type_table = sym_tbl.SymbolTable()
     repl_heap = {}
     total_stmt = ast.StmtList()
-    cur_cmd = -1
 
 
 '''
