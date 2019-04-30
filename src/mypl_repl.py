@@ -33,7 +33,7 @@ cur_cmd = -1
 
 
 def main():
-    vocab = {'MyPL', 'bowers', 'repl', 'opl'}
+    vocab = {'load', 'save', 'clear', 'exit', 'help'}
     readline.parse_and_bind('tab: complete')
     readline.set_completer(make_completer(vocab))
 
