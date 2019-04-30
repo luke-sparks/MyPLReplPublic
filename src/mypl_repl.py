@@ -37,7 +37,7 @@ def main():
     readline.parse_and_bind('tab: complete')
     readline.set_completer(make_completer(vocab))
 
-    print('MyPL REPL Version 0.4')
+    print('MyPL REPL Version 1.0')
     print('Use ":" for commands, :help for list of commands.')
     keepGoing = True
     while(keepGoing):
@@ -70,7 +70,11 @@ def main():
                 # If the command is save, save to given file or create new one
                 # Get the filename by seperating the statement on the space
                 cur_stmt = cur_stmt[1:].split()
-                save(cur_stmt[1])
+                if cur_stmt == ["save"]:
+                    cur_stmt = "repl_save.mypl"
+                    save(cur_stmt)
+                else:
+                    save(cur_stmt[1])
             elif ('clear' in cur_stmt):
                 clear()
                 print('Cleared REPL')
@@ -127,7 +131,6 @@ def run_stmt(cur_stmt):
                 print(struct_or_func_decl)
         else:
             if('(' not in cur_stmt and 'struct' not in cur_stmt and 'new' not in cur_stmt):
-                print('the_interpreter.current_value')
                 print(the_interpreter.current_value)
     except error.MyPLError as e:
         print('Error: %s' % e.message)
@@ -176,10 +179,13 @@ the contents from the files into the current REPL context.
 @param name of file to be opened
 '''
 def load(filename):
+    try:
+        f = open(filename, "r")
+    except FileNotFoundError as e:
+        print('Unable to find file "%s"' % filename)
+        return
+
     print('loading "%s" into REPL' % filename)
-
-    f = open(filename, "r")
-
     global type_table
     global value_table
     global repl_heap
